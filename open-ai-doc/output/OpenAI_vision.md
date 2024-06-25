@@ -169,15 +169,6 @@ response = client.chat.completions.create(
 
 print(response.choices[0].message.content)
 ```
-
-## Managing images
-
-The Chat Completions API, unlike the Assistants API, is not stateful. That means you have to manage the messages (including images) you pass to the model yourself. If you want to pass the same image to the model multiple times, you will have to pass the image each time you make a request to the API.
-
-For long running conversations, we suggest passing images via URL's instead of base64. The latency of the model can also be improved by downsizing your images ahead of time to be less than the maximum size they are expected them to be. For low res mode, we expect a 512px x 512px image. For high res mode, the short side of the image should be less than 768px and the long side should be less than 2,000px.
-
-After an image has been processed by the model, it is deleted from OpenAI servers and not retained. We do not use data uploaded via the OpenAI API to train our models.
-
 ## Limitations
 
 While GPT-4 with vision is powerful and can be used in many situations, it is important to understand the limitations of the model. Here are some of the limitations we are aware of:
@@ -193,51 +184,3 @@ While GPT-4 with vision is powerful and can be used in many situations, it is im
  - Metadata and resizing: The model doesn't process original file names or metadata, and images are resized before analysis, affecting their original dimensions.
  - Counting: May give approximate counts for objects in images.
  - CAPTCHAS: For safety reasons, we have implemented a system to block the submission of CAPTCHAs.
-
-## Calculating costs
-
-Image inputs are metered and charged in tokens, just as text inputs are. The token cost of a given image is determined by two factors: its size, and the `detail` option on each image_url block. All images with `detail: low` cost 85 tokens each. `detail: high` images are first scaled to fit within a 2048 x 2048 square, maintaining their aspect ratio. Then, they are scaled such that the shortest side of the image is 768px long. Finally, we count how many 512px squares the image consists of. Each of those squares costs *170 tokens*. Another *85 tokens* are always added to the final total.
-
-Here are some examples demonstrating the above.
-
- - A 1024 x 1024 square image in `detail: high` mode costs 765 tokens
-    - 1024 is less than 2048, so there is no initial resize.
-    - The shortest side is 1024, so we scale the image down to 768 x 768.
-    - 4 512px square tiles are needed to represent the image, so the final token cost is `170 * 4 + 85 = 765`.
- - A 2048 x 4096 image in `detail: high` mode costs 1105 tokens
-    - We scale down the image to 1024 x 2048 to fit within the 2048 square.
-    - The shortest side is 1024, so we further scale down to 768 x 1536.
-    - 6 512px tiles are needed, so the final token cost is `170 * 6 + 85 = 1105`.
- - A 4096 x 8192 image in `detail: low` most costs 85 tokens
-    - Regardless of input size, low detail images are a fixed cost.
-
-## FAQ
-
-### Can I fine-tune the image capabilities in gpt-4?
-No, we do not support fine-tuning the image capabilities of gpt-4 at this time.
-
-### Can I use gpt-4 to generate images?
-No, you can use dall-e-3 to generate images and gpt-4o or gpt-4-turbo to understand images.
-
-### What type of files can I upload?
-We currently support PNG (.png), JPEG (.jpeg and .jpg), WEBP (.webp), and non-animated GIF (.gif).
-
-### Is there a limit to the size of the image I can upload?
-Yes, we restrict image uploads to 20MB per image.
-
-### Can I delete an image I uploaded?
-No, we will delete the image for you automatically after it has been processed by the model.
-
-### Where can I learn more about the considerations of GPT-4 with Vision?
-You can find details about our evaluations, preparation, and mitigation work in the GPT-4 with Vision system card.
-
-We have further implemented a system to block the submission of CAPTCHAs.
-
-### How do rate limits for GPT-4 with Vision work?
-We process images at the token level, so each image we process counts towards your tokens per minute (TPM) limit. See the calculating costs section for details on the formula used to determine token count per image.
-
-### Can GPT-4 with Vision understand image metadata?
-No, the model does not receive image metadata.
-
-### What happens if my image is unclear?
-If an image is ambiguous or unclear, the model will do its best to interpret it. However, the results may be less accurate. A good rule of thumb is that if an average human cannot see the info in an image at the resolutions used in low/high res mode, then the model cannot either.

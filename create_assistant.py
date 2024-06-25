@@ -34,5 +34,5 @@ assistant = client.beta.assistants.update(
 
 print(assistant.id)
 print(vector_store.id)
-# asst_HtzlNr7yRRzv7fqVdLoEBkj1
-# vs_WZ03qyalEmVDTwiTtSqjsEVp
+# asst_GFTHq0XWeaBxvRD2yumi6kWM
+# vs_84W04BQwozPVlNk0ILI2hGrR
