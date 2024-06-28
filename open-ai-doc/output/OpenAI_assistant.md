@@ -55,4 +55,3 @@ else:
   print(run.status)
 
 ```
-You may also want to list the Run Steps of this Run if you'd like to look at any tool calls made during this Run.

@@ -8,11 +8,18 @@ def num_tokens_from_string(string: str, encoding) -> int:
     return num_tokens
 
 encoding = tiktoken.encoding_for_model("gpt-4o")
-file_paths = [f'open-ai-doc/output/{file}' for file in os.listdir('open-ai-doc/output')]
+
+directories = ['open-ai-doc/output', 'streamlit-doc/output']
+file_paths = []
+for directory in directories:
+    for dirpath, dirnames, filenames in os.walk(directory):
+        file_paths.extend([os.path.join(dirpath, file) for file in filenames])
+
 
 
 for file_path in file_paths:
     with open(file_path, "r") as file:
         text = file.read()
         num_tokens = num_tokens_from_string(text, encoding)
-        print(f"{file_path}: {num_tokens}")
+        if num_tokens > 400:
+            print(f"{file_path}: {num_tokens} tokens")

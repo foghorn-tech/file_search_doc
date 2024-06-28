@@ -18,25 +18,38 @@ client = OpenAI(
 
 # assistant_id = assistant.id
 
-assistant_id = 'asst_GFTHq0XWeaBxvRD2yumi6kWM'
+assistant_id = 'asst_V9iyJ43mPwL8vKK06aum7sNk'
 
-vector_store = client.beta.vector_stores.create(name="openai docs test")
+assistant = client.beta.assistants.retrieve(assistant_id=assistant_id)
 
-file_paths = [f'open-ai-doc/output/{file}' for file in os.listdir('open-ai-doc/output')]
+print(assistant)
+
+#vector_store = client.beta.vector_stores.create(name="openai docs")
+# #vector_store_id = vector_store.id
+vector_store_id = 'vs_01jlNqtl3UvXHnZm1rFkzrJH'
+#
+
+directories = ['open-ai-doc/output', 'streamlit-doc/output']
+file_paths = []
+for directory in directories:
+    for dirpath, dirnames, filenames in os.walk(directory):
+        file_paths.extend([os.path.join(dirpath, file) for file in filenames])
+
 file_streams = [open(path, "rb") for path in file_paths]
 
 # Use the upload and poll SDK helper to upload the files, add them to the vector store,
 # and poll the status of the file batch for completion.
 file_batch = client.beta.vector_stores.file_batches.upload_and_poll(
-  vector_store_id=vector_store.id, files=file_streams
+  vector_store_id=vector_store_id, files=file_streams
 )
 
 assistant = client.beta.assistants.update(
   assistant_id=assistant_id,
-  tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+  tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}},
 )
 
 print(assistant_id)
-print(vector_store.id)
+print(vector_store_id)
+print(file_batch)
 # asst_GFTHq0XWeaBxvRD2yumi6kWM
-# vs_84W04BQwozPVlNk0ILI2hGrR
+# vs_LpAPpFttxEQ7JpnnuCjpojSy
