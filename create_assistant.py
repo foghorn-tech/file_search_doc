@@ -18,11 +18,17 @@ client = OpenAI(
 
 # assistant_id = assistant.id
 
-assistant_id = 'asst_GFTHq0XWeaBxvRD2yumi6kWM'
+assistant_id = 'asst_V9iyJ43mPwL8vKK06aum7sNk'
 
 vector_store = client.beta.vector_stores.create(name="openai docs test")
 
-file_paths = [f'open-ai-doc/output/{file}' for file in os.listdir('open-ai-doc/output')]
+directories = ['open-ai-doc/output', 'airtable/output']
+
+file_paths = []
+for directory in directories:
+    for dir_path, dir_names, filenames in os.walk(directory):
+        for filename in filenames:
+            file_paths.append(os.path.join(dir_path, filename))
 file_streams = [open(path, "rb") for path in file_paths]
 
 # Use the upload and poll SDK helper to upload the files, add them to the vector store,
