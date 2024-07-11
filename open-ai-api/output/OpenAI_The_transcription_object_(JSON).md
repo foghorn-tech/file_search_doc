@@ -1,10 +1,11 @@
-# [The transcription object (JSON)](/docs/api-reference/audio/json-object)
+# The transcription object
 
 Represents a transcription response returned by model, based on the
 provided input.
-| Parameter | Type | Required | Description|
-| --- | --- | --- | --- |
-| text | string | Optional | The transcribed text.|
+
+| Parameter   | Type    | Required | Description |
+|-------------|---------|----------|-------------|
+| text        | string  | Optional | The transcribed text. |
 
 **The transcription object (JSON)**
 
