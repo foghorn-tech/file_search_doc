@@ -2,33 +2,27 @@ import streamlit as st
 import openai
 import os
 
-# Initialize OpenAI Client
-openai.api_key = os.getenv("OPENAI_API_KEY", "<your OpenAI API key>")
+# Initialize OpenAI client
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Function to generate dinner list
-def generate_dinner_list(preferences):
-    prompt = f"Generate a dinner list based on the following preferences: {preferences}"
-    try:
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=prompt,
-            max_tokens=150
-        )
-        dinner_list = response.choices[0].text.strip()
-        return dinner_list
-    except Exception as e:
-        return f"An error occurred: {e}"
+def generate_dinner_list(prompt):
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=prompt,
+        max_tokens=150
+    )
+    return response.choices[0].text.strip()
 
-# Streamlit App
+# Streamlit app
 st.title("Dinner List Generator")
 
-# User input
-preferences = st.text_input("Enter your preferences for the dinner list:")
+prompt = st.text_input("Enter your preferences:")
 
-if st.button("Generate Dinner List"):
-    if preferences:
-        dinner_list = generate_dinner_list(preferences)
-        st.subheader("Here is your generated dinner list:")
+if st.button("Generate"):
+    if prompt:
+        dinner_list = generate_dinner_list(prompt)
+        st.subheader("Your Dinner List:")
         st.write(dinner_list)
     else:
         st.error("Please enter your preferences.")

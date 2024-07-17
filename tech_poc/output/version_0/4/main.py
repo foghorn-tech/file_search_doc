@@ -1,19 +1,28 @@
+import streamlit as st
 import pandas as pd
 import urllib.parse
 
-# Load the CSV file
-df = pd.read_csv('path_to_your_file.csv')
+# Function to generate Obsidian URL
+def generate_obsidian_url(title, content):
+    encoded_title = urllib.parse.quote(title)
+    encoded_content = urllib.parse.quote(content)
+    return f"obsidian://new?name={encoded_title}&content={encoded_content}"
 
-# Convert the DataFrame to a markdown table
-markdown_table = df.to_markdown(index=False)
+# Streamlit app
+st.title("CSV to Obsidian Importer")
 
-# Encode the title and content for the Obsidian URL
-title = "Imported CSV Data"
-encoded_title = urllib.parse.quote(title)
-encoded_content = urllib.parse.quote(markdown_table)
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-# Create the Obsidian URL
-obsidian_url = f"obsidian://new?name={encoded_title}&content={encoded_content}"
-
-# Print the URL (or you can use it directly in your application)
-print(obsidian_url)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.write("CSV Data:", df)
+    
+    title_column = st.selectbox("Select the column for titles", df.columns)
+    content_column = st.selectbox("Select the column for content", df.columns)
+    
+    if st.button("Generate Obsidian URLs"):
+        for index, row in df.iterrows():
+            title = row[title_column]
+            content = row[content_column]
+            obsidian_url = generate_obsidian_url(title, content)
+            st.write(f"[{title}]({obsidian_url})")

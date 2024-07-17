@@ -2,61 +2,67 @@ import streamlit as st
 from openai import OpenAI
 import os
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "<your OpenAI API key>"))
+# Initialize OpenAI Client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Create an assistant with required tools
+# Create Assistant with File Search Tool
 assistant = client.beta.assistants.create(
-    instructions="You are a PDF analysis assistant. Use the provided tools to analyze PDF files and answer questions.",
+    name="PDF Chat Assistant",
+    instructions="You are an assistant that helps users extract information from PDF files.",
     model="gpt-4o",
-    tools=[{"type": "code_interpreter"}, {"type": "file_search"}]
+    tools=[{"type": "file_search"}]
 )
 
-# Streamlit app
-st.title("Chat PDF Bot")
-st.write("Upload a PDF file and ask questions about its content.")
+# Streamlit App
+st.title("Chat with your PDF")
 
-# File uploader
+# Upload PDF File
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 if uploaded_file is not None:
     # Save the uploaded file temporarily
     with open("temp.pdf", "wb") as f:
         f.write(uploaded_file.getbuffer())
-
-    # Upload the PDF file to OpenAI for analysis
-    file = client.files.create(
-        file=open("temp.pdf", "rb"),
-        purpose="assistants"
+    
+    # Upload PDF File to OpenAI
+    file = client.files.create(file=open("temp.pdf", "rb"), purpose="file_search")
+    
+    # Create a Thread
+    thread = client.beta.threads.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "You can ask questions about the content of the uploaded PDF."
+            }
+        ]
     )
-
-    # Create a thread to manage the conversation context
-    thread = client.beta.threads.create()
-
-    # User input for questions
-    user_query = st.text_input("Ask a question about the PDF")
-
+    
+    # User Query Input
+    user_query = st.text_input("Ask a question about the PDF content:")
+    
     if st.button("Submit"):
         if user_query:
-            # Add a message to the thread with the user's query and attach the uploaded PDF file
-            message = client.beta.threads.messages.create(
+            # Add User Query to the Thread
+            thread = client.beta.threads.update(
                 thread_id=thread.id,
-                role="user",
-                content=user_query,
-                attachments=[{"file_id": file.id, "tools": [{"type": "file_search"}]}]
+                messages=[
+                    {
+                        "role": "user",
+                        "content": user_query
+                    }
+                ]
             )
-
-            # Initiate a run to process the user's query and get the response from the assistant
+            
+            # Create a Run
             run = client.beta.threads.runs.create_and_poll(
                 thread_id=thread.id,
                 assistant_id=assistant.id
             )
-
+            
+            # Get the Response from the Assistant
             if run.status == 'completed':
                 messages = client.beta.threads.messages.list(thread_id=thread.id)
-                result = messages.data[0].content[0].text.value
-                st.write(result)
+                response = messages.data[-1].content
+                st.write(response)
             else:
-                st.write("Processing in progress, please wait...")
-        else:
-            st.write("Please enter a question.")
+                st.write("Processing, please wait...")

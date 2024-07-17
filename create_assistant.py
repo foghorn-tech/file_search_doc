@@ -4,7 +4,7 @@ from openai import OpenAI
 client = OpenAI(
     # This is the default and can be omitted
     api_key=os.environ.get("OPENAI_API_KEY"),
-    base_url=os.environ.get("OPENAI_API_BASE_URL"),
+    base_url=os.environ.get("OPENAI_BASE_URL"),
 )
 
 

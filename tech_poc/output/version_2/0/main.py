@@ -5,46 +5,57 @@ import os
 # Initialize OpenAI Client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "<your OpenAI API key>"))
 
-# Create Assistant with Required Tools
+# Create Assistant with File Search Tool
 assistant = client.beta.assistants.create(
     name="PDF Chat Assistant",
     instructions="You are an assistant that helps users extract information from PDF files.",
     model="gpt-4o",
-    tools=[{"type": "code_interpreter"}, {"type": "file_search"}]
+    tools=[{"type": "file_search"}]
 )
 
 # Streamlit app
-st.title("Chat PDF Bot")
+st.title("Chat with your PDF")
 
+# File uploader
 uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
 if uploaded_file is not None:
+    # Save uploaded file temporarily
+    with open("temp.pdf", "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
     # Upload PDF File to OpenAI
-    file = client.files.create(file=uploaded_file, purpose="assistants")
+    file = client.files.create(file=open("temp.pdf", "rb"), purpose="fine-tune")
 
     # Create a Thread
-    thread = client.beta.threads.create()
+    thread = client.beta.threads.create(
+        assistant_id=assistant.id,
+        messages=[
+            {"role": "system", "content": "You can ask questions about the PDF file."}
+        ]
+    )
 
-    # Add User Query to the Thread
-    user_query = st.text_input("Enter your query about the PDF")
-    if st.button("Submit Query"):
-        message = client.beta.threads.messages.create(
+    # User input
+    user_query = st.text_input("Ask a question about the PDF")
+
+    if st.button("Submit"):
+        # Add User Message to the Thread
+        client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
-            content=user_query,
-            attachments=[{"file_id": file.id, "tools": [{"type": "file_search"}]}]
+            content=user_query
         )
 
-        # Run the Assistant
+        # Create a Run
         run = client.beta.threads.runs.create_and_poll(
             thread_id=thread.id,
             assistant_id=assistant.id
         )
 
-        # Display the Results
+        # Get the Response from the Assistant
         if run.status == 'completed':
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            result = messages.data[0].content[0].text.value
-            st.write(result)
+            response = messages.data[-1].content
+            st.write("Assistant's response:", response)
         else:
             st.write("Processing, please wait...")

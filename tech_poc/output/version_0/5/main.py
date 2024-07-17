@@ -15,13 +15,37 @@ uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 if uploaded_file is not None:
     # Read the CSV file
     df = pd.read_csv(uploaded_file)
-    st.write("CSV Data:", df)
+    st.write("CSV Data:")
+    st.write(df)
 
-    # Notion database ID input
+    # Get Notion database ID from user
     database_id = st.text_input("Enter Notion Database ID")
 
     if st.button("Import to Notion"):
-        for index, row in df.iterrows():
-            properties = {col: {"rich_text": [{"text": {"content": str(row[col])}}]} for col in df.columns}
-            notion.pages.create(parent={"database_id": database_id}, properties=properties)
+        # Convert DataFrame to list of dictionaries
+        data = df.to_dict(orient="records")
+
+        # Function to create a page in Notion
+        def create_page(data):
+            new_page = {
+                "parent": {"database_id": database_id},
+                "properties": {}
+            }
+            for key, value in data.items():
+                new_page["properties"][key] = {
+                    "title": [
+                        {
+                            "text": {
+                                "content": str(value)
+                            }
+                        }
+                    ]
+                }
+            return new_page
+
+        # Import each row to Notion
+        for row in data:
+            page = create_page(row)
+            notion.pages.create(**page)
+
         st.success("Data imported successfully!")

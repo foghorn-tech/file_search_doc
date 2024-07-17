@@ -2,52 +2,30 @@ import os
 import csv
 from notion_client import Client
 
-# Initialize Notion client
+# Initialize the Notion client with your API token
 notion = Client(auth=os.getenv("NOTION_TOKEN"))
 
-# Define the database ID
+# Define the database ID where the data will be imported
 database_id = "your_database_id_here"
 
 # Function to create a new page in the Notion database
-def create_page(notion, database_id, row):
-    properties = {
-        "Name": {
-            "title": [
-                {
-                    "text": {
-                        "content": row["Name"]
-                    }
-                }
-            ]
-        },
-        "Description": {
-            "rich_text": [
-                {
-                    "text": {
-                        "content": row["Description"]
-                    }
-                }
-            ]
-        },
-        "Category": {
-            "select": {
-                "name": row["Category"]
-            }
-        },
-        "Price": {
-            "number": float(row["Price"])
-        },
-        "In stock": {
-            "checkbox": row["In stock"].lower() == "true"
-        }
+def create_page(properties):
+    new_page = {
+        "parent": {"database_id": database_id},
+        "properties": properties
     }
+    notion.pages.create(**new_page)
 
-    notion.pages.create(parent={"database_id": database_id}, properties=properties)
-
-# Read CSV file and import data into Notion
-csv_file_path = "path_to_your_csv_file.csv"
-
-with open(csv_file_path, mode='r', encoding='utf-8-sig') as file:
+# Open and read the CSV file
+with open('your_file.csv', mode='r') as file:
     csv_reader = csv.DictReader(file)
     for row in csv_reader:
-        create_page(notion, database_id, row)
+        # Map CSV headers to Notion database properties
+        properties = {
+            "Name": {"title": [{"text": {"content": row["Name"]}}]},
+            "Tags": {"multi_select": [{"name": tag} for tag in row["Tags"].split(",")]}
+            # Add more properties as needed
+        }
+        create_page(properties)
+
+print("Data imported successfully.")

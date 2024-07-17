@@ -4,68 +4,77 @@ import requests
 import json
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from openai.embeddings_utils import get_embedding, cosine_similarity
+from bs4 import BeautifulSoup
 
-# Initialize the OpenAI client and set the API key
+# Initialize OpenAI client and set the API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Function to perform web search using Bing Search API
-def web_search(query):
-    subscription_key = os.getenv("BING_SEARCH_API_KEY")
-    search_url = "https://api.bing.microsoft.com/v7.0/search"
-    headers = {"Ocp-Apim-Subscription-Key": subscription_key}
-    params = {"q": query, "textDecorations": True, "textFormat": "HTML"}
-    response = requests.get(search_url, headers=headers, params=params)
-    response.raise_for_status()
-    search_results = response.json()
-    return search_results
+# Function to perform web search using DuckDuckGo
+def search_duckduckgo(query):
+    url = "https://duckduckgo.com/html/"
+    params = {'q': query}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+    response = requests.get(url, params=params, headers=headers)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        results = [{'title': result.get_text(), 'link': result.get('href')} for result in soup.find_all('a', class_='result__a')]
+        return results
+    else:
+        return None
 
-# Function to parse and store search results
-def parse_search_results(search_results):
-    parsed_results = []
-    for result in search_results.get("webPages", {}).get("value", []):
-        parsed_results.append({
-            "name": result["name"],
-            "url": result["url"],
-            "snippet": result["snippet"]
-        })
-    return parsed_results
+# Function to save search results to a JSON file
+def save_results_to_file(results, filename="search_results.json"):
+    with open(filename, 'w') as file:
+        json.dump(results, file)
 
-# Function to create a vector store
-def create_vector_store(parsed_results):
-    vectors = []
-    for result in parsed_results:
-        embedding = get_embedding(result["snippet"], engine="text-embedding-ada-002")
-        vectors.append({"result": result, "embedding": embedding})
-    return vectors
+# Function to create a vector store and upload search results
+def create_vector_store_and_upload(file_path):
+    client = openai.OpenAI()
+    vector_store = client.beta.vector_stores.create(name="Search Results Store")
+    file_stream = open(file_path, "rb")
+    file_batch = client.beta.vector_stores.file_batches.upload_and_poll(vector_store_id=vector_store.id, files=[file_stream])
+    return vector_store.id
 
-# Function to upload search results to OpenAI's vector store
-def upload_to_vector_store(vectors):
-    # This is a placeholder function. Replace with actual implementation to upload to OpenAI's vector store.
-    pass
+# Function to create an assistant with code interpreter and vector search tools
+def create_assistant(vector_store_id):
+    client = openai.OpenAI()
+    assistant = client.beta.assistants.create(
+        instructions="You are an AI-powered search assistant. Retrieve and display search results based on user queries.",
+        model="gpt-4o",
+        tools=[{"type": "code_interpreter"}, {"type": "file_search"}],
+        tool_resources={"file_search": {"vector_store_ids": [vector_store_id]}}
+    )
+    return assistant
 
-# Function to process user query and retrieve relevant search results
-def process_query(user_query, vectors):
-    query_embedding = get_embedding(user_query, engine="text-embedding-ada-002")
-    similarities = [(cosine_similarity(query_embedding, vector["embedding"]), vector["result"]) for vector in vectors]
-    similarities.sort(reverse=True, key=lambda x: x[0])
-    return [result for _, result in similarities[:5]]
+# Function to create a new conversation thread and add user's query
+def create_thread_and_add_query(assistant, query):
+    client = openai.OpenAI()
+    thread = client.beta.threads.create()
+    message = client.beta.threads.messages.create(thread_id=thread.id, role="user", content=query)
+    return thread
+
+# Function to run the assistant and process the user's query
+def run_assistant(assistant, thread):
+    client = openai.OpenAI()
+    run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant.id)
+    if run.status == 'completed':
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        return messages.data[0].content[0].text.value
+    else:
+        return "Processing..."
 
 # Streamlit app
-st.title("AI-powered Search Bot")
+st.title("AI-Powered Search Bot")
 
-user_query = st.text_input("Enter your search query:")
-
-if user_query:
-    search_results = web_search(user_query)
-    parsed_results = parse_search_results(search_results)
-    vectors = create_vector_store(parsed_results)
-    upload_to_vector_store(vectors)
-    relevant_results = process_query(user_query, vectors)
-    
-    st.write("Search Results:")
-    for result in relevant_results:
-        st.write(f"**{result['name']}**")
-        st.write(result["snippet"])
-        st.write(result["url"])
+query = st.text_input("Enter your search query:")
+if st.button("Search"):
+    search_results = search_duckduckgo(query)
+    if search_results:
+        save_results_to_file(search_results)
+        vector_store_id = create_vector_store_and_upload("search_results.json")
+        assistant = create_assistant(vector_store_id)
+        thread = create_thread_and_add_query(assistant, query)
+        result = run_assistant(assistant, thread)
+        st.write(result)
+    else:
+        st.write("Failed to retrieve results")

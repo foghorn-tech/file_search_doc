@@ -1,27 +1,23 @@
-import csv
-import urllib.parse
+import streamlit as st
+import pandas as pd
 
-# Step 1: Prepare the CSV File
-csv_file_path = 'path_to_your_csv_file.csv'
+st.title("CSV to Obsidian Import Guide")
 
-# Step 2: Parse the CSV File
-with open(csv_file_path, mode='r', encoding='utf-8') as file:
-    csv_reader = csv.reader(file)
-    headers = next(csv_reader)
-    rows = [row for row in csv_reader]
+st.markdown("""
+### Steps to Import a CSV File into Obsidian
 
-# Step 3: Format the Data
-markdown_content = '| ' + ' | '.join(headers) + ' |\n'
-markdown_content += '| ' + ' | '.join(['---'] * len(headers)) + ' |\n'
-for row in rows:
-    markdown_content += '| ' + ' | '.join(row) + ' |\n'
+1. **Prepare the CSV File**: Ensure your CSV file is properly formatted and saved on your local machine.
+2. **Open Obsidian**: Launch the Obsidian application on your computer.
+3. **Install the CSV Plugin**: If not already installed, navigate to the Obsidian settings, go to the "Community plugins" section, and search for a CSV import plugin. Install and enable the plugin.
+4. **Create a New Note**: In Obsidian, create a new note where you want to import the CSV data.
+5. **Use the CSV Plugin**: Use the installed CSV plugin to import the CSV file. This typically involves selecting an option like "Import CSV" from the plugin's menu and then choosing the CSV file from your local machine.
+6. **Verify the Import**: Check the new note to ensure that the CSV data has been imported correctly. Adjust any formatting as needed.
+7. **Save and Organize**: Save the note and organize it within your Obsidian vault as desired.
+""")
 
-# Step 4: Create the Obsidian Note
-note_title = 'Imported CSV Data'
-encoded_title = urllib.parse.quote(note_title)
-encoded_content = urllib.parse.quote(markdown_content)
-obsidian_uri = f'obsidian://new?name={encoded_title}&content={encoded_content}'
+uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
-# Step 5: Open the URI
-import webbrowser
-webbrowser.open(obsidian_uri)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.write("### Preview of CSV Data")
+    st.write(df)

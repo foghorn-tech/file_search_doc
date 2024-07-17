@@ -4,27 +4,32 @@ import pandas as pd
 import time
 from notion_client import Client
 
-# Set up Notion API connection
+# Initialize Notion client
 notion = Client(auth=os.environ["NOTION_TOKEN"])
 
 # Read the CSV file using pandas
-csv_data = pd.read_csv('yourfile.csv').to_dict(orient='records')
+data = pd.read_csv('yourfile.csv')
 
-# Function to map CSV data to Notion properties
-def map_csv_to_notion(csv_row):
+# Prepare data for Notion
+def format_data_for_notion(row):
     return {
-        "Name": {"title": [{"text": {"content": csv_row["Name"]}}]},
-        "Description": {"rich_text": [{"text": {"content": csv_row["Description"]}}]},
-        # Add more mappings as needed
+        "Name": {"title": [{"text": {"content": row["Name"]}}]},
+        "Description": {"rich_text": [{"text": {"content": row["Description"]}}]},
+        # Add other properties as needed
     }
 
-# Create Notion pages or database entries
-for row in csv_data:
+formatted_data = [format_data_for_notion(row) for index, row in data.iterrows()]
+
+# Retrieve Notion database ID
+database_id = "your_database_id"
+
+# Insert data into Notion database
+for item in formatted_data:
     try:
         notion.pages.create(
-            parent={"database_id": "your_database_id"},
-            properties=map_csv_to_notion(row)
+            parent={"database_id": database_id},
+            properties=item
         )
     except Exception as e:
-        print(f"Error creating page for row {row}: {e}")
+        print(f"Error: {e}")
         time.sleep(1)  # Wait before retrying

@@ -5,66 +5,60 @@ import os
 # Initialize the OpenAI client by setting up the API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Create an assistant with the necessary tools
-def create_assistant():
-    return openai.ChatCompletion.create(
+# Function to upload PDF file
+def upload_pdf():
+    uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
+    if uploaded_file is not None:
+        return uploaded_file
+    return None
+
+# Function to create a new conversation thread
+def create_conversation():
+    response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant."}
+            {"role": "system", "content": "You are a helpful assistant."},
         ]
-    )
-
-# Upload the PDF file to OpenAI's platform
-def upload_pdf(file):
-    response = openai.File.create(
-        file=open(file, "rb"),
-        purpose='answers'
     )
     return response['id']
 
-# Create a new conversation thread
-def create_conversation():
-    return openai.ChatCompletion.create(
+# Function to add a message to the thread
+def add_message(conversation_id, user_query):
+    response = openai.ChatCompletion.create(
         model="gpt-4",
+        conversation_id=conversation_id,
         messages=[
-            {"role": "system", "content": "You are a helpful assistant."}
+            {"role": "user", "content": user_query},
         ]
     )
+    return response
 
-# Add the user's query to the conversation thread
-def add_query_to_conversation(conversation_id, query, file_id):
-    return openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "user", "content": query},
-            {"role": "system", "content": f"Analyze the PDF file with ID: {file_id}"}
-        ]
-    )
-
-# Initiate a run to process the user's query
-def process_query(conversation_id, query, file_id):
-    response = add_query_to_conversation(conversation_id, query, file_id)
+# Function to process the user's query
+def process_query(conversation_id, user_query):
+    response = add_message(conversation_id, user_query)
     return response['choices'][0]['message']['content']
 
 # Streamlit app
-st.title("Chat PDF Bot")
-
-# File uploader
-uploaded_file = st.file_uploader("Upload a PDF file", type="pdf")
-
-if uploaded_file is not None:
-    # Upload the PDF file
-    file_id = upload_pdf(uploaded_file)
+def main():
+    st.title("Chat PDF Bot")
     
-    # Create a new conversation
-    conversation = create_conversation()
+    # Step 1: Upload the PDF file
+    pdf_file = upload_pdf()
     
-    # User query input
-    user_query = st.text_input("Enter your query about the PDF")
-    
-    if st.button("Submit Query"):
-        # Process the query
-        response = process_query(conversation['id'], user_query, file_id)
+    if pdf_file:
+        # Step 2: Create a new conversation thread
+        conversation_id = create_conversation()
         
-        # Display the response
-        st.write(response)
+        # Step 3: Get user query
+        user_query = st.text_input("Enter your query about the PDF file:")
+        
+        if st.button("Submit"):
+            # Step 4: Process the user's query
+            response = process_query(conversation_id, user_query)
+            
+            # Step 5: Display the response
+            st.write("Response from assistant:")
+            st.write(response)
+
+if __name__ == "__main__":
+    main()

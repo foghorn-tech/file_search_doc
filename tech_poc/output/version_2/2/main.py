@@ -1,38 +1,31 @@
 import streamlit as st
-from openai import OpenAI
+import openai
 import os
 
-# Initialize the OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "<your OpenAI API key>"))
+# Initialize OpenAI Client
+openai.api_key = os.getenv("OPENAI_API_KEY", "<your OpenAI API key>")
 
-# Function to collect user preferences and dietary restrictions
-def get_user_preferences():
-    preferences = {}
-    preferences['cuisine'] = st.text_input("Enter preferred cuisine (e.g., Italian, Chinese, etc.): ")
-    preferences['diet'] = st.text_input("Enter dietary restrictions (e.g., vegetarian, gluten-free, etc.): ")
-    preferences['allergies'] = st.text_input("Enter any food allergies: ")
-    return preferences
-
-# Function to generate a dinner list using OpenAI's API
+# Function to generate dinner list
 def generate_dinner_list(preferences):
-    prompt = f"Generate a dinner list based on the following preferences: Cuisine: {preferences['cuisine']}, Dietary Restrictions: {preferences['diet']}, Allergies: {preferences['allergies']}."
-    
-    response = client.completions.create(
+    prompt = f"Generate a dinner list based on the following preferences: {preferences}"
+    response = openai.Completion.create(
         model="text-davinci-003",
         prompt=prompt,
         max_tokens=150
     )
-    
-    return response.choices[0].text.strip()
+    dinner_list = response.choices[0].text.strip()
+    return dinner_list
 
-# Main function to integrate the user input collection and the dinner list generation
-def main():
-    st.title("Dinner List Generator")
-    preferences = get_user_preferences()
-    if st.button("Generate Dinner List"):
+# Streamlit UI
+st.title("Dinner List Generator")
+st.write("Enter your preferences or dietary restrictions:")
+
+preferences = st.text_area("Preferences")
+
+if st.button("Generate Dinner List"):
+    if preferences:
         dinner_list = generate_dinner_list(preferences)
-        st.write("Generated Dinner List:")
+        st.write("Here is your generated dinner list:")
         st.write(dinner_list)
-
-if __name__ == "__main__":
-    main()
+    else:
+        st.write("Please enter your preferences.")

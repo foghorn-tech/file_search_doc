@@ -4,10 +4,10 @@ from openai import OpenAI
 client = OpenAI(
     # This is the default and can be omitted
     api_key=os.environ.get("OPENAI_API_KEY"),
-    base_url=os.environ.get("OPENAI_API_BASE_URL"),
+    base_url=os.environ.get("OPENAI_BASE_URL"),
 )
 
-# # Create a new assistant: for rewrite user prompt
+# Create a new assistant: for rewrite user prompt
 # assistant2 = client.beta.assistants.create(
 #   name="Coding Assistant",
 #   instructions="You are an expert in technology, specializing in prompt fine-tuning and technical solution design.",
@@ -17,7 +17,7 @@ client = OpenAI(
 # )
 # print(assistant2)
 # tech_assistant_id = assistant2.id
-tech_assistant_id = 'asst_lhMmzVVNx5uJVFXomQUFmrnq'
+tech_assistant_id = 'asst_plL8kwVdowSOk4sYXE5KP5bw'
 
 
 vector_store = client.beta.vector_stores.create(name="openai docs test")

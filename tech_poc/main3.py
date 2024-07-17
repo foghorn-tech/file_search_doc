@@ -5,7 +5,7 @@ from utils import match_content_in_quote, match_content_list_in_quote
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
-    base_url=os.environ.get("OPENAI_API_BASE_URL"),
+    base_url=os.environ.get("OPENAI_BASE_URL"),
 )
 
 query_list = [
@@ -15,6 +15,11 @@ query_list = [
     "Help me import CSV into Airtable.",
     "Help me import CSV into Obsidian.",
     "Help me import CSV into Notion.",
+    "Explain what happened in the video I uploaded.",
+    "Explain what happened in the audio I uploaded.",
+    "Explain what happened in the image I uploaded.",
+    "build app user can input some text, then use ai to generate images based on the input. "
+    "build app user can input some text, then use ai to generate speech based on the input. "
 ]
 code_assistant_id = 'asst_4VuT8MH3frdp33CSAF8fMYpd'
 rewrite_assistant_id = 'asst_lhMmzVVNx5uJVFXomQUFmrnq'

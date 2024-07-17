@@ -24,6 +24,17 @@
 
 - 效果接近预期的结果
 - 但会把 step 通过 st.header 展示
+- Notion 和 Airtable 可以跑通， 但流程上还是不那么丝滑，是技术方案喂的文档有问题
 
 
 ## version 4
+
+修改技术方案notion和airtable的文档
+
+补充了一个chat.completions.create api 文档，希望能修复 An app that ask open ai to generate a dinner list的问题
+(实际使用不行，因为prompt里面没提到 chat completions , 也不会检索到这个文档，但tech solution的文档里面带上了错误的代码，会导致生成的代码有问题)
+
+## version 5
+
+不让 tech assistant 里面生成代码， 只保留技术方案
+- 结果变得更差了，还在定位原因

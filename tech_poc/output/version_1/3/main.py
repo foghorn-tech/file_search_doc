@@ -1,36 +1,35 @@
 import os
 import pandas as pd
-from pyairtable import Api, Table
+from pyairtable import Api
 
 # Step 1: Prepare Airtable API Credentials
-api_key = os.getenv('AIRTABLE_API_KEY')
-base_id = os.getenv('AIRTABLE_BASE_ID')
-table_name = 'YourTableName'
+api_key = os.environ['AIRTABLE_API_KEY']
 
-# Step 2: Initialize Airtable Client
+# Step 2: Set Up Airtable Client
 api = Api(api_key)
-table = Table(api_key, base_id, table_name)
 
-# Step 3: Read and Preprocess CSV Data
-csv_file_path = 'path_to_your_csv_file.csv'
-df = pd.read_csv(csv_file_path)
+# Step 3: Data Preprocessing
+data = pd.read_csv('path_to_your_file.csv')
+# Perform any necessary data cleaning here
 
 # Step 4: Design Airtable Table Structure
-# Assuming the CSV has columns 'Name', 'Email', 'Age'
 fields = [
     {"name": "Name", "type": "singleLineText"},
     {"name": "Email", "type": "email"},
-    {"name": "Age", "type": "number"}
+    # Add other fields as necessary
 ]
 
 # Step 5: Create Airtable Table
-# Note: Airtable API does not support creating tables via API, so this step is skipped.
+base_id = 'your_base_id'
+table_name = 'Table Name'
+table = api.base(base_id).create_table(table_name, fields)
 
 # Step 6: Import Data into Airtable
-for index, row in df.iterrows():
-    record = {
-        "Name": row['Name'],
-        "Email": row['Email'],
-        "Age": row['Age']
-    }
+table = api.table(base_id, table_name)
+for index, row in data.iterrows():
+    record = row.to_dict()
     table.create(record)
+
+# Step 7: Verify Data Import
+# Check the Airtable table to ensure all records have been imported correctly
+# Optionally, write a script to verify the integrity of the imported data
